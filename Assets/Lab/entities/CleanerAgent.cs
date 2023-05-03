@@ -41,8 +41,13 @@ public class CleanerAgent : Agent
         GameObject gameObject = other.gameObject;
         if (gameObject.tag == "goal")
         {
-            AddReward(10f);
+            AddReward(5f);
             goalService.RemoveGoal(gameObject);
+        }
+        if (gameObject.tag == "wall")
+        {
+            SetReward(-5f);
+            EndEpisode();
         }
     }
 
@@ -51,8 +56,7 @@ public class CleanerAgent : Agent
         GameObject gameObject = collision.gameObject;
         if (gameObject.tag == "wall")
         {
-            SetReward(-10f);
-            EndEpisode();
+            SetReward(-5f);
         }
     }
 
@@ -81,7 +85,6 @@ public class CleanerAgent : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        //sensor.AddObservation(transform.localPosition);
         var sensorsDetectionInfo = CollectDetectionInfo();
         sensor.AddObservation(sensorsDetectionInfo.ConvertAll<float>(info => info.Key));
         sensor.AddObservation(sensorsDetectionInfo.ConvertAll<float>(info => info.Value));
@@ -90,17 +93,16 @@ public class CleanerAgent : Agent
     public List<KeyValuePair<float, float>> CollectDetectionInfo()
     {
         var info = new List<KeyValuePair<float, float>>();
-        info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(-18, transform.up) * transform.forward, maxDetectionDistance));
+        info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(-20, transform.up) * transform.forward, maxDetectionDistance));
         info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(-12, transform.up) * transform.forward, maxDetectionDistance));
         info.Add(DetectWithRay(transform.position, transform.forward * 1f, maxDetectionDistance));
         info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(12, transform.up) * transform.forward, maxDetectionDistance));
-        info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(18, transform.up) * transform.forward, maxDetectionDistance));
-        
+        info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(20, transform.up) * transform.forward, maxDetectionDistance));
+        info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(-16, transform.up) * transform.forward * -1f, minDetectionDistance));
         info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(-12, transform.up) * transform.forward * -1f, minDetectionDistance));
         info.Add(DetectWithRay(transform.position, transform.forward * -1f, minDetectionDistance));
         info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(12, transform.up) * transform.forward * -1f, minDetectionDistance));
-        //Debug.Log(info[0].Key + ", " + info[1].Key + ", " + info[2].Key + ", " + info[3].Key + ", " + info[4].Key + ", " + info[5].Key + ", " + info[6].Key + ", " + info[7].Key);
-        //Debug.Log(info[0].Value + ", " + info[1].Value + ", " + info[2].Value + ", " + info[3].Value + ", " + info[4].Value + ", " + info[5].Value + ", " + info[6].Value + ", " + info[7].Value);
+        info.Add(DetectWithRay(transform.position, Quaternion.AngleAxis(16, transform.up) * transform.forward * -1f, minDetectionDistance));
         return info;
     }
 
@@ -111,9 +113,12 @@ public class CleanerAgent : Agent
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, detectionDistance))
         {
-            hit.transform.gameObject.GetComponent<HitLogic>().needChange = true;
+            HitLogic hitLogic;
+            hit.transform.gameObject.TryGetComponent<HitLogic>(out hitLogic);
+            if (hitLogic)
+                hitLogic.needChange = true;
             sensorInfo = GetDetectionTypeAndDistance(hit);
-            sensorInfo = new KeyValuePair<float, float>(sensorInfo.Key, sensorInfo.Value / detectionDistance);
+            sensorInfo = new KeyValuePair<float, float>(sensorInfo.Key, sensorInfo.Value);
         }
         return sensorInfo;
     }

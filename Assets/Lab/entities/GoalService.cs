@@ -9,9 +9,13 @@ public class GoalService : MonoBehaviour
     public int goals;
     public int spawnRange;
     public int goalsOnScene { get; set; }
-   
+    public float goalsLifeTime;
+    private float goalsLifeTimeRemaining;
+
     void Start()
     {
+        CleanupGoals();
+        goalsLifeTimeRemaining = goalsLifeTime;
         goalsOnScene = goals;
         for (int i = 0; i < goals; i++)
         {
@@ -27,9 +31,18 @@ public class GoalService : MonoBehaviour
 
     void Update()
     {
-        if (goalsOnScene == 0)
+        if (goalsOnScene == 0 || goalsLifeTimeRemaining < 0)
         {
             Start();
+        }
+        goalsLifeTimeRemaining -= Time.deltaTime;
+    }
+
+    private void CleanupGoals()
+    {
+        foreach (Transform child in this.transform)
+        {
+            GameObject.Destroy(child.gameObject);
         }
     }
 
